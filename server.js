@@ -23,7 +23,7 @@ const contCheck = () => {
 
 async function getEmployees() {
   const response = await new Promise((resolve, reject) => {
-    db.query('SELECT employees.id AS id, employees.first_name AS First_Name, employees.last_name AS Last_Name, roles.title AS Title, departments.dept_name AS Department, roles.salary AS Salary, manager.first_name || ' ' || manager.last_name AS Manager FROM employees LEFT JOIN employees manager ON manager.id = employees.manager_id JOIN roles ON employees.role_id = roles.id JOIN departments ON roles.department_id = departments.id ORDER BY employees.id', (err, employees) => {
+    db.query('SELECT employees.id AS id, employees.first_name AS First_Name, employees.last_name AS Last_Name, roles.title AS Title, departments.dept_name AS Department, roles.salary AS Salary, manager.first_name || \' \' || manager.last_name AS Manager FROM employees LEFT JOIN employees manager ON manager.id = employees.manager_id JOIN roles ON employees.role_id = roles.id JOIN departments ON roles.department_id = departments.id ORDER BY employees.id', (err, employees) => {
       if (err) {reject(err)}
       resolve(employees)
     })
@@ -43,7 +43,7 @@ async function getEmployeesByDept() {
 
 async function getEmployeesByManager() {
   const response = await new Promise((resolve, reject) => {
-    db.query('SELECT employees.first_name AS First_Name, employees.last_name AS Last_Name, manager.first_name || ' ' || manager.last_name AS Manager FROM employees JOIN employees manager ON manager.id = employees.manager_id', (err, employees) => {
+    db.query('SELECT employees.first_name AS First_Name, employees.last_name AS Last_Name, manager.first_name || \' \' || manager.last_name AS Manager FROM employees JOIN employees manager ON manager.id = employees.manager_id', (err, employees) => {
       if (err) {reject(err)}
       resolve(employees)
     })
@@ -139,7 +139,7 @@ const menu = () => {
   prompt ([
     {
       type: 'list',
-      name 'action',
+      name: 'action',
       message: 'What would you like to do?',
       choices: ['View all employees', 'View all employees by department', 'View all employees by manager', 'Add employee', 'Remove employee', 'Update employee role', 'Update employee manager', 'EXIT']
     }
