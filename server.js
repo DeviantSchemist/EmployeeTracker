@@ -1,8 +1,14 @@
+const express = require('express')
+const app = express()
+const { join } = require('path')
 const { prompt } = require('inquirer')
-const mysql = require('mysql2')
 require('console.table')
 
-const db = mysql.createConnection('mysql://root:rootroot@localhost:3306/employees_db')
+app.use(express.static(join(__dirname, 'public')))
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+
+app.use(require('./routes'))
 
 const menu = () => {
   prompt ([
@@ -14,3 +20,6 @@ const menu = () => {
     }
   ])
 }
+
+
+app.listen(process.env.PORT || 3000)
