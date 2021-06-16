@@ -1,15 +1,8 @@
-// const express = require('express')
-// const app = express()
-// const { join } = require('path')
+const inquirer = require('inquirer')
 const { prompt } = require('inquirer')
+const Choices = require('inquirer/lib/objects/choices')
 const db = require('./db')
 require('console.table')
-
-// app.use(express.static(join(__dirname, 'public')))
-// app.use(express.urlencoded({ extended: true }))
-// app.use(express.json())
-
-// app.use(require('./routes'))
 
 const contCheck = () => {
   prompt({
@@ -78,6 +71,39 @@ const viewEmployeesByManager = () => {
     .catch(err => console.log(err))
 }
 
+const roleArray = []
+const pickRole = () => {
+  db.query('SELECT * FROM roles', (err, roles) => {
+    if (err) {console.log(err)}
+    for (let i = 0; i < roles.length; i++) {
+      roleArray.push(roles[i].title)
+    }
+  })
+  return roleArray
+}
+
+const managerArray = []
+const pickManager = () => {
+  db.query('SELECT * FROM employees WHERE manager_id IS NULL', (err, managers) => {
+    if (err) {console.log(err)}
+    for (let i = 0; i < managers.length; i++) {
+      managerArray.push(managers[i].first_name)
+    }
+  })
+  return managerArray
+}
+
+const deptArray = []
+const pickDepartment = () => {
+  db.query('SELECT * FROM departments', (err, departments) => {
+    if (err) {console.log(err)}
+    for (let i = 0; i < departments.length; i++) {
+      deptArray.push(departments[i].dept_name)
+    }
+  })
+  return deptArray
+}
+
 const createEmployee = () => {
   prompt([
     {
@@ -91,47 +117,119 @@ const createEmployee = () => {
       message: 'What is the employee\'s last name?'
     },
     {
-      type: 'input',
+      type: 'list',
       name: 'role',
-      message: 'What is the employee\s role?'
+      message: 'What is the employee\'s role?',
+      choices: pickRole()
     },
     {
-      type: 'input',
+      type: 'list',
       name: 'manager',
-      message: 'Who is the employee\s manager?'
+      message: 'Who is the employee\'s manager?',
+      choices: pickManager()
     }
   ])
   .then(employee => {
-    db.query('INSERT INTO employees SET ?', employee, err => {
+    // add employee here
+    let roleID = pickRole().indexOf(employee.role)+1
+    let managerID = pickManager().indexOf(employee.manager)+1
+    db.query('INSERT INTO employees SET ?', 
+    {
+      first_name: employee.firstName,
+      last_name: employee.lastName,
+      role_id: roleID,
+      manager_id: managerID 
+    }, err => {
       if (err) {console.log(err)}
-      console.log('Added employee to database.')
+      console.log('Employee added to database!')
       contCheck()
     })
   })
   .catch(err => console.log(err))
 }
 
-const deleteEmployee = () => {
-  getEmployees()
-    .then(employees => {
-      prompt({
-          type: 'list',
-          name: 'id',
-          message: 'Who do you want to remove?',
-          choices: employees.map(employee => ({
-            firstName: employee.firstName,
-            value: employee.id
-          }))
-        })
-        .then(id => {
-          db.query('DELETE FROM employees WHERE ?', id, err => {
-            if (err) {console.log(err)}
-            console.log('Employee deleted!')
-            contCheck()
-          })
+const updateEmployeeRole = () => {
+  db.query('SELECT employees.last_name, roles.title FROM employees JOIN roles ON employees.role_id = roles.id', (err, employeeRoles) => {
+    if (err) {console.log(err)}
+    prompt([
+      {
+        type: 'list',
+        name: 'lastName',
+        choices: () => {
+          let lastNameArray = []
+          for (let i = 0; i < employeeRoles.length; i++) {
+            lastNameArray.push(employeeRoles[i].last_name)
+          }
+          return lastNameArray
+        },
+        messsage: 'What is the employee\'s last name?'
+      },
+      {
+        type: 'list',
+        name: 'role',
+        message: 'What is the employee\'s new role?',
+        choices: pickRole()
+      }
+    ])
+    .then(response => {
+      let roleID = pickRole().indexOf(response.role)+1
+      db.query('UPDATE employees SET ? WHERE ?', { role_id: roleID }, {last_name: response.lastName}, err => {
+          if (err) {console.log(err)}
+          console.log('Updated employee!')
+          contCheck()
         })
     })
     .catch(err => console.log(err))
+  })
+}
+
+const addRole = () => {
+  db.query('SELECT roles.title AS Title, roles.salary AS Salary FROM roles', (err, roleInfo) => {
+    prompt([
+      {
+        type: 'input',
+        name: 'title',
+        message: 'What is this role\'s title?'
+      },
+      {
+        type: 'number',
+        name: 'salary',
+        message: 'What is this role\'s salary?'
+      },
+      {
+        type: 'list',
+        name: 'department',
+        message: 'Which department is this role?',
+        choices: pickDepartment()
+      }
+    ])
+    .then(response => {
+      let deptID = pickDepartment().indexOf(response.department)+1
+      db.query('INSERT INTO roles SET ?', {title: response.title, salary: response.salary, department_id: deptID}, err => {
+        if (err) {console.log(err)}
+        console.log('Added a new role!')
+        contCheck()
+      })
+    })
+    .catch(err => console.log(err))
+  })
+}
+
+const addDepartment = () => {
+  prompt([
+    {
+      type: 'input',
+      name: 'deptName',
+      message: 'What department would you like to add?'
+    }
+  ])
+  .then(response => {
+    db.query('INSERT INTO departments SET ?', {dept_name: response.deptName}, err => {
+      if (err) {console.log(err)}
+      console.log('Added new department!')
+      contCheck()
+    })
+  })
 }
 
 // MENU FOR THE USER INPUT
@@ -141,11 +239,11 @@ const menu = () => {
       type: 'list',
       name: 'action',
       message: 'What would you like to do?',
-      choices: ['View all employees', 'View all employees by department', 'View all employees by manager', 'Add employee', 'Remove employee', 'Update employee role', 'Update employee manager', 'EXIT']
+      choices: ['View all employees', 'View all employees by department', 'View all employees by manager', 'Add employee', 'Add department', 'Add role', 'Update employee role', 'EXIT']
     }
   ])
-  .then (answers => {
-    switch(answers.action) {
+  .then (({action}) => {
+    switch (action) {
       case 'View all employees':
         viewEmployees()
         break
@@ -158,8 +256,14 @@ const menu = () => {
       case 'Add employee':
         createEmployee()
         break
-      case 'Remove employee':
-        deleteEmployee()
+      case 'Add department':
+        addDepartment()
+        break
+      case 'Add role':
+        addRole()
+        break
+      case 'Update employee role':
+        updateEmployeeRole()
         break
       case 'EXIT':
         process.exit()
@@ -169,6 +273,3 @@ const menu = () => {
 }
 
 menu()
-
-
-// app.listen(process.env.PORT || 3000)
