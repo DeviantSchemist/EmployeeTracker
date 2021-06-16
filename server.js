@@ -4,6 +4,7 @@ const Choices = require('inquirer/lib/objects/choices')
 const db = require('./db')
 require('console.table')
 
+// asks the user if they want to continue using this application or not
 const contCheck = () => {
   prompt({
     type: 'confirm',
@@ -14,6 +15,7 @@ const contCheck = () => {
     .catch(err => console.log(err))
 }
 
+// returns the selected information about employees
 async function getEmployees() {
   const response = await new Promise((resolve, reject) => {
     db.query('SELECT employees.id AS id, employees.first_name AS First_Name, employees.last_name AS Last_Name, roles.title AS Title, departments.dept_name AS Department, roles.salary AS Salary, CONCAT(manager.first_name, " ", manager.last_name) AS Manager FROM employees LEFT JOIN employees manager ON manager.id = employees.manager_id JOIN roles ON employees.role_id = roles.id JOIN departments ON roles.department_id = departments.id ORDER BY employees.id', (err, employees) => {
@@ -24,6 +26,7 @@ async function getEmployees() {
   return response
 }
 
+// returns employees based on which department they are in
 async function getEmployeesByDept() {
   const response = await new Promise((resolve, reject) => {
     db.query('SELECT employees.first_name AS First_Name, employees.last_name AS Last_Name, departments.dept_name FROM employees JOIN roles ON employees.role_id = roles.id JOIN departments ON roles.department_id = departments.id ORDER BY departments.id', (err, employees) => {
@@ -34,6 +37,7 @@ async function getEmployeesByDept() {
   return response
 }
 
+// returns employees based on who they have as their manager
 async function getEmployeesByManager() {
   const response = await new Promise((resolve, reject) => {
     db.query('SELECT employees.first_name AS First_Name, employees.last_name AS Last_Name, CONCAT(manager.first_name, " ", manager.last_name) AS Manager FROM employees JOIN employees manager ON manager.id = employees.manager_id', (err, employees) => {
@@ -44,6 +48,7 @@ async function getEmployeesByManager() {
   return response
 }
 
+// displays the employees
 const viewEmployees = () => {
   getEmployees()
     .then(employees => {
@@ -53,6 +58,7 @@ const viewEmployees = () => {
     .catch(err => console.log(err))
 }
 
+// displays employees filtered by departments
 const viewEmployeesByDept = () => {
   getEmployeesByDept()
     .then(employees => {
@@ -62,6 +68,7 @@ const viewEmployeesByDept = () => {
     .catch(err => console.log(err))
 }
 
+// displays employees filtered by manager
 const viewEmployeesByManager = () => {
   getEmployeesByManager()
     .then(employees => {
@@ -71,6 +78,7 @@ const viewEmployeesByManager = () => {
     .catch(err => console.log(err))
 }
 
+// used for adding a new employee
 const roleArray = []
 const pickRole = () => {
   db.query('SELECT * FROM roles', (err, roles) => {
@@ -82,6 +90,7 @@ const pickRole = () => {
   return roleArray
 }
 
+// used for adding a new employee
 const managerArray = []
 const pickManager = () => {
   db.query('SELECT * FROM employees WHERE manager_id IS NULL', (err, managers) => {
@@ -93,6 +102,7 @@ const pickManager = () => {
   return managerArray
 }
 
+// used for adding a new role
 const deptArray = []
 const pickDepartment = () => {
   db.query('SELECT * FROM departments', (err, departments) => {
@@ -104,6 +114,7 @@ const pickDepartment = () => {
   return deptArray
 }
 
+// adds a new employee to the database
 const createEmployee = () => {
   prompt([
     {
@@ -148,6 +159,7 @@ const createEmployee = () => {
   .catch(err => console.log(err))
 }
 
+// updates an existing employee's role
 const updateEmployeeRole = () => {
   db.query('SELECT employees.last_name, roles.title FROM employees JOIN roles ON employees.role_id = roles.id', (err, employeeRoles) => {
     if (err) {console.log(err)}
@@ -183,6 +195,7 @@ const updateEmployeeRole = () => {
   })
 }
 
+// adds a new role to the database
 const addRole = () => {
   db.query('SELECT roles.title AS Title, roles.salary AS Salary FROM roles', (err, roleInfo) => {
     prompt([
@@ -215,6 +228,7 @@ const addRole = () => {
   })
 }
 
+// adds a new department to the database
 const addDepartment = () => {
   prompt([
     {
@@ -272,4 +286,5 @@ const menu = () => {
   .catch(err => console.error(err))
 }
 
+// starts the menu
 menu()
