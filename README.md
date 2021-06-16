@@ -37,6 +37,9 @@
   ## Screenshot
   <img src="./EmployeeTracker.png" alt="Screenshot of application" />
 
+  ## Demo Video
+  https://youtu.be/Ky2gdf9rgt8
+
 
   ## Questions
   If you have additional questions, please see below for my contact information.
